@@ -1,0 +1,3 @@
+rec -b 8 -c 1 -e un -r 44100 sample.wav
+
+./read_data < sample.wav > sample.txt
