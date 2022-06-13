@@ -38,7 +38,9 @@ int main(int argc, char **argv) {
         if (s == -1) die("accept");
 
         FILE *rec = popen("rec -t raw -b 16 -c 1 -e s -r 44100 -", "r");
-        if (rec == NULL) die("popen");
+        if (rec == NULL) die("rec");
+        FILE *play = popen("play -t raw -b 16 -c 1 -e s -r 44100 -", "w");
+        if (play == NULL) die("play");
 
         unsigned char recv_data[1000], send_data[1000];
 
@@ -47,11 +49,9 @@ int main(int argc, char **argv) {
             if (m == -1) die("recv");
             if (m == 0) break;
 
-            if (write(1, &recv_data, m) == -1) die("write");
+            if (fwrite(&recv_data, 1, m, play) == -1) die("write");
 
-            // write(1, "read\n", 5);
             int n = fread(&send_data, 1, 1000, rec);
-            // int n = read(0, &send_data, 1000);
             if (n == -1) die("fread");
             if (n == 0) break;
 
@@ -73,22 +73,24 @@ int main(int argc, char **argv) {
         if (ret == -1) die("connect");
 
         FILE *rec = popen("rec -t raw -b 16 -c 1 -e s -r 44100 -", "r");
-        if (rec == NULL) die("popen");
+        if (rec == NULL) die("rec");
+        FILE *play = popen("play -t raw -b 16 -c 1 -e s -r 44100 -", "w");
+        if (play == NULL) die("play");
 
         unsigned char recv_data, send_data;
 
         while (1) {
-            int n = fread(&send_data, 1, 1, rec);
+            int n = fread(&send_data, 1, 1000, rec);
             if (n == -1) die("fread");
             if (n == 0) break;
 
-            if (send(s, &send_data, 1, 0) == -1) die("send");
+            if (send(s, &send_data, n, 0) == -1) die("send");
 
-            int m = recv(s, &recv_data, 1, 0);
+            int m = recv(s, &recv_data, 1000, 0);
             if (m == -1) die("recv");
             if (m == 0) break;
 
-            if (write(1, &recv_data, 1) == -1) die("write");
+            if (fwrite(&recv_data, 1, m, play) == -1) die("write");
         }
     } else {
         die("./tel port or ./tel addr port");
